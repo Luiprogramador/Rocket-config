@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chosen Palette: Warm Neutrals & Subtle Blue -->
+    <!-- Application Structure Plan: A thematic, tab-based single-page application was chosen to allow users to non-linearly access specific configuration areas (Camera, Controls, etc.) without overwhelming them. This dashboard approach transforms the report's linear text into self-contained, interactive modules (e.g., a camera configurator, a control layout visualizer), which is more aligned with a user's goal of actively setting up their game rather than passively reading a document. The flow is: Home -> Performance (quick setup) -> Camera (deep dive/interactive) -> Controls (visual comparison) -> Training (utility). This structure prioritizes user action and exploration. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Camera settings & archetypes -> Goal: Compare & Personalize -> Viz/Method: Interactive sliders linked to a Radar Chart (Chart.js) and a dynamic table. -> Interaction: Selecting an archetype presets sliders; moving sliders updates the chart and table in real-time. -> Justification: Visually demonstrates the trade-offs (e.g., field vision vs. car control) and connects user choices to pro player data, making abstract concepts tangible.
+        - Report Info: Control layouts -> Goal: Compare & Understand -> Viz/Method: An HTML/CSS-based visual diagram of a controller. -> Interaction: Buttons for different layouts update the diagram's highlights and explanatory text. -> Justification: A visual map is far more intuitive for control bindings than a text table.
+        - Report Info: Training packs -> Goal: Organize & Provide Utility -> Viz/Method: A filterable grid of cards. -> Interaction: Filter buttons and a "copy code" button. -> Justification: Turns a static list into a practical, easy-to-use tool.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Guia Interativo de Configurações - Rocket League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f7f4;
+            color: #2c2c2c;
+        }
+        .tab-active {
+            background-color: #007BFF;
+            color: #ffffff;
+            border-color: #007BFF;
+        }
+        .tab-inactive {
+            background-color: #ffffff;
+            color: #333333;
+            border-color: #e0e0e0;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .slider-track {
+            background-color: #e5e7eb;
+        }
+        .slider-thumb {
+            background-color: #007BFF;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            cursor: pointer;
+            outline: none;
+            border-radius: 9999px;
+            height: 8px;
+            background: #e5e7eb;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 20px;
+            width: 20px;
+            background-color: #007BFF;
+            border-radius: 50%;
+            border: none;
+            transition: .2s ease-in-out;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            background-color: #007BFF;
+            border-radius: 50%;
+            border: none;
+            transition: .2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Painel de Controlo de Configurações</h1>
+            <p class="text-lg text-gray-600 mt-2">O seu guia interativo para a otimização no Rocket League</p>
+        </header>
+
+        <nav class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+            <button data-tab="inicio" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Início</button>
+            <button data-tab="performance" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Performance</button>
+            <button data-tab="camera" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Câmera</button>
+            <button data-tab="controles" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Controles</button>
+            <button data-tab="sensibilidade" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Sensibilidade</button>
+            <button data-tab="treino" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Treino</button>
+        </nav>
+
+        <main>
+            <div id="inicio" class="tab-content">
+                <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-4">Bem-vindo ao seu Laboratório de Configurações!</h2>
+                    <p class="text-gray-700 mb-4">No Rocket League, as suas configurações são a fundação da sua performance. Uma configuração inadequada pode limitar o seu progresso, não importa o quanto treine. Este painel foi criado para o ajudar a entender os princípios por trás de cada ajuste e a construir uma configuração que pareça uma extensão natural do seu corpo.</p>
+                    <p class="text-gray-700">Use as abas acima para navegar pelas diferentes áreas de otimização. Em cada secção, encontrará ferramentas interativas e dados baseados em jogadores profissionais para o guiar. O objetivo não é copiar, mas sim entender, experimentar e criar o que funciona melhor para **você**.</p>
+                </div>
+            </div>
+
+            <div id="performance" class="tab-content hidden">
+                <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-2">Arquitetura da Performance: Vídeo e Interface</h2>
+                    <p class="text-gray-600 mb-6">Para um jogo de reações rápidas, a performance e a clareza superam a beleza gráfica. O objetivo é maximizar os frames por segundo (FPS) e minimizar o "input lag". Use esta checklist para otimizar o seu jogo.</p>
+                    <div id="performance-checklist" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <div id="camera" class="tab-content hidden">
+                 <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-2">A Janela para o Campo: Configuração de Câmera</h2>
+                    <p class="text-gray-600 mb-6">A câmera é a sua ferramenta mais importante para a consciência situacional. Escolha um arquétipo para começar, ou ajuste os sliders para criar a sua própria configuração. Observe como o gráfico e a lista de profissionais se atualizam para refletir as suas escolhas.</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4 text-center">1. Escolha o seu Arquétipo</h3>
+                            <div id="archetype-selector" class="flex justify-center gap-4 mb-8"></div>
+                            
+                            <h3 class="text-xl font-semibold mb-4 text-center">2. Ajuste Fino</h3>
+                            <div id="camera-sliders" class="space-y-4"></div>
+                             <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p class="text-sm text-blue-800"><strong class="font-semibold">Dica:</strong> A relação entre <strong class="font-semibold">Altura</strong> e <strong class="font-semibold">Ângulo</strong> é crucial. Uma altura baixa (90-100) com um ângulo acentuado (-4 a -5) favorece o controlo mecânico. Uma altura elevada (100-110) com um ângulo suave (-3 a -4) favorece a visão de campo.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4 text-center">Análise do Estilo de Jogo</h3>
+                            <div class="chart-container mb-8">
+                                <canvas id="cameraChart"></canvas>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-4 text-center">Profissionais com Estilo Similar</h3>
+                            <div class="overflow-x-auto max-h-60">
+                                <table class="min-w-full bg-white">
+                                    <thead class="bg-gray-100">
+                                        <tr>
+                                            <th class="text-left py-2 px-3 font-semibold text-sm">Jogador</th>
+                                            <th class="text-center py-2 px-3 font-semibold text-sm">Dist.</th>
+                                            <th class="text-center py-2 px-3 font-semibold text-sm">Alt.</th>
+                                            <th class="text-center py-2 px-3 font-semibold text-sm">Âng.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pro-player-table" class="divide-y divide-gray-200">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="controles" class="tab-content hidden">
+                 <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-2">O Ápice do Controlo: Mapeamento de Botões</h2>
+                    <p class="text-gray-600 mb-6">O layout de botões padrão limita o seu potencial mecânico. Mudar para um layout otimizado, especialmente um que incorpore o Rolamento Aéreo Direcional (DAR), é o passo mais importante para o jogo avançado. Selecione um layout para ver as mudanças e entender as suas vantagens.</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                        <div class="flex flex-col items-center">
+                            <h3 class="text-xl font-semibold mb-4 text-center">Layouts Recomendados</h3>
+                            <div id="layout-selector" class="flex flex-col items-stretch gap-3 mb-6 w-full max-w-xs"></div>
+                            <div id="layout-info" class="p-4 bg-gray-50 border border-gray-200 rounded-lg w-full max-w-xs">
+                                <h4 id="layout-title" class="font-bold text-lg mb-2"></h4>
+                                <p id="layout-desc" class="text-sm text-gray-700"></p>
+                            </div>
+                        </div>
+                        <div id="controller-diagram" class="relative w-full max-w-md mx-auto aspect-[4/3]">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sensibilidade" class="tab-content hidden">
+                <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-2">Busca pela Fluidez: Sensibilidade e Zonas Mortas</h2>
+                    <p class="text-gray-600 mb-6">Estas configurações governam como os seus comandos analógicos são traduzidos em movimento. Otimizá-las é crucial para um controlo que seja rápido, reativo e preciso.</p>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">Sensibilidade de Direção e Aérea</h3>
+                            <p class="text-gray-700 mb-3">A maioria dos jogadores de alto nível usa valores entre 1.20 e 1.50 para reações mais rápidas. É recomendado manter ambos os valores idênticos para consistência na memória muscular.</p>
+                            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p class="text-blue-800"><strong class="font-semibold">Ponto de Partida Recomendado:</strong> 1.20 para ambos.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-2">Zona Morta do Controle (Controller Deadzone)</h3>
+                            <p class="text-gray-700 mb-3">Este valor combate o "stick drift" e depende do desgaste do seu controle. Um valor baixo (ex: 0.05) é mais reativo, enquanto um valor alto (ex: 0.15) oferece mais estabilidade.</p>
+                             <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p class="text-sm text-blue-800"><strong class="font-semibold">Como encontrar o seu valor ideal:</strong> No menu do jogo, diminua a deadzone para 0.00. Se o carro virar sozinho, aumente em 0.01 até parar. Esse é o seu mínimo funcional.</p>
+                            </div>
+                        </div>
+                         <div>
+                            <h3 class="text-xl font-semibold mb-2">Zona Morta de Esquiva (Dodge Deadzone)</h3>
+                            <p class="text-gray-700 mb-3">Um valor alto aqui evita "backflips" acidentais ao tentar fazer um "fast aerial".</p>
+                             <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p class="text-blue-800"><strong class="font-semibold">Faixa Recomendada:</strong> 0.60 a 0.80.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="treino" class="tab-content hidden">
+                 <div class="card p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-2">Fase de Adaptação: Pacotes de Treino</h2>
+                    <p class="text-gray-600 mb-6">Mudar as configurações exige paciência e treino para construir uma nova memória muscular. Use estes pacotes de treino personalizados para acelerar o processo. Filtre por habilidade e clique para copiar o código.</p>
+                    <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-6">
+                        <button data-filter="all" class="filter-button bg-blue-500 text-white py-2 px-4 rounded-full font-semibold">Todos</button>
+                        <button data-filter="Controle" class="filter-button bg-white text-gray-700 py-2 px-4 rounded-full font-semibold border">Controle</button>
+                        <button data-filter="Aéreo" class="filter-button bg-white text-gray-700 py-2 px-4 rounded-full font-semibold border">Aéreo</button>
+                        <button data-filter="Defesa" class="filter-button bg-white text-gray-700 py-2 px-4 rounded-full font-semibold border">Defesa</button>
+                        <button data-filter="Ataque" class="filter-button bg-white text-gray-700 py-2 px-4 rounded-full font-semibold border">Ataque</button>
+                    </div>
+                    <div id="training-packs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    </div>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const data = {
+        performance: [
+            { setting: 'Modo de Exibição', value: 'Tela Cheia (Fullscreen)', reason: 'Minimiza o input lag do sistema operativo.' },
+            { setting: 'Sincronização Vertical', value: 'Desligado', reason: 'Causa input lag significativo, prejudicial à reatividade.' },
+            { setting: 'Qualidade de Renderização', value: 'Alta Performance', reason: 'Maximiza os FPS.' },
+            { setting: 'FPS Máximo', value: 'Igual ou superior à taxa de atualização do monitor', reason: 'Garante a máxima fluidez e a menor latência.' },
+            { setting: 'Traves Transparentes', value: 'Ligado', reason: 'Essencial para manter a visão clara ao defender ou atacar.' },
+            { setting: 'Vibração da Câmera', value: 'Desligado', reason: 'Remove perturbações visuais desnecessárias.' },
+            { setting: 'Vibração do Controle', value: 'Desligado', reason: 'Remove distrações táteis que podem interferir na precisão.' },
+            { setting: 'Todos os Efeitos Gráficos', value: 'Desligado/Baixo', reason: 'Remove "ruído visual" e maximiza os FPS (Bloom, Lens Flares, etc.).' }
+        ],
+        camera: {
+            archetypes: {
+                mecanico: { name: 'Mecânico', fov: 110, distance: 270, height: 90, angle: -5, stiffness: 0.5, swivelSpeed: 5.0, transitionSpeed: 1.2 },
+                hibrido: { name: 'Híbrido', fov: 110, distance: 270, height: 100, angle: -4, stiffness: 0.45, swivelSpeed: 6.0, transitionSpeed: 1.0 },
+                estrategista: { name: 'Estrategista', fov: 110, distance: 280, height: 110, angle: -3, stiffness: 0.4, swivelSpeed: 7.0, transitionSpeed: 1.0 }
+            },
+            pros: [
+                { name: '(april)', distance: 260, height: 90, angle: -5 },
+                { name: 'AYYJAYY', distance: 270, height: 90, angle: -4 },
+                { name: 'Ahmad', distance: 270, height: 90, angle: -5 },
+                { name: 'GarrettG', distance: 270, height: 110, angle: -4 },
+                { name: 'Squishy Muffinz', distance: 270, height: 100, angle: -3 },
+                { name: 'Addzey', distance: 270, height: 100, angle: -4 },
+                { name: 'Jstn', distance: 270, height: 110, angle: -3 },
+                { name: '1zen', distance: 280, height: 110, angle: -3 },
+                { name: 'Alanis', distance: 270, height: 110, angle: -3 },
+                { name: 'ApparentlyJack', distance: 270, height: 100, angle: -3 },
+                { name: 'Atow.', distance: 270, height: 100, angle: -5 },
+                { name: 'BeastMode', distance: 260, height: 100, angle: -3 },
+            ]
+        },
+        controls: {
+            padrao_ouro: {
+                name: 'Padrão Ouro',
+                desc: 'Equilíbrio ideal e o mais comum entre profissionais. Liberta o polegar para saltar e usar boost simultaneamente.',
+                bindings: { boost: 'R1/RB', powerslide: 'L1/LB', nar: 'L1/LB', arl: 'Quadrado/X', arr: 'Círculo/B' }
+            },
+            zen: {
+                name: 'Zen',
+                desc: 'Permite controlo analógico do Rolamento Aéreo Esquerdo (ARL) no gatilho, mas combina-o com a marcha-atrás.',
+                bindings: { boost: 'R1/RB', powerslide: 'Quadrado/X', nar: 'L1/LB', arl: 'L2/LT', arr: 'Círculo/B' }
+            },
+            apparentlyjack: {
+                name: 'ApparentlyJack',
+                desc: 'Otimizado para usar ARL e Boost com dedos diferentes, mas agrupa muitas funções no L1/LB.',
+                bindings: { boost: 'R1/RB', powerslide: 'L1/LB', nar: 'L1/LB', arl: 'L1/LB', arr: 'Quadrado/X' }
+            }
+        },
+        trainingPacks: [
+            { name: 'Awkward Car Control', focus: 'Controle aéreo difícil', code: '454D-664E-AE27-55C3', category: 'Controle' },
+            { name: 'Intermediate Power Slides', focus: 'Controlo de derrapagens', code: '772F-E563-3F9F-0EC8', category: 'Controle' },
+            { name: 'First Touch Prac', focus: 'Controlo do primeiro toque', code: 'A49C-FECE-12C7-9271', category: 'Controle' },
+            { name: 'Kevpert | Aerial Car Control', focus: 'Controlo aéreo estacionário', code: 'A3E1-92C2-8757-4195', category: 'Aéreo' },
+            { name: 'Basic Aerials', focus: 'Introdução aos aéreos', code: 'F0BD-E416-D47D-AF28', category: 'Aéreo' },
+            { name: 'Air Dribbles', focus: 'Introdução ao air dribble', code: '1839-0F86-CE07-EE1F', category: 'Aéreo' },
+            { name: 'Double Tap Playground', focus: 'Prática de double taps', code: 'CAFC-FB3E-3C0F-B8F1', category: 'Aéreo' },
+            { name: 'Wall to Air Dribble', focus: 'Transição da parede para o ar', code: '9D87-258C-3C05-6FA9', category: 'Aéreo' },
+            { name: 'Shadow Defense', focus: 'Defesa em sombra', code: '5CCE-FB29-7B05-A0B1', category: 'Defesa' },
+            { name: 'Uncomfortable Saves', focus: 'Defesas difíceis', code: '2E23-ABD5-20C6-DBD4', category: 'Defesa' },
+            { name: 'Backboard Defense', focus: 'Defesas na parede de fundo', code: 'D7F8-FD53-98D1-DAFE', category: 'Defesa' },
+            { name: 'Ground Shots', focus: 'Chutes rasteiros', code: '6EB1-79B2-33B8-681C', category: 'Ataque' },
+            { name: 'Shooting Consistency', focus: 'Consistência nos chutes', code: '4912-A5C9-9A56-555D', category: 'Ataque' },
+            { name: 'Wall Shots', focus: 'Chutes a partir da parede', code: '9F6D-4387-4C57-2E4B', category: 'Ataque' },
+        ]
+    };
+
+    let cameraChart;
+    let currentSettings = { ...data.camera.archetypes.hibrido };
+
+    const tabs = document.querySelectorAll('.tab-button');
+    const contents = document.querySelectorAll('.tab-content');
+
+    const switchTab = (tabName) => {
+        contents.forEach(content => {
+            content.classList.add('hidden');
+        });
+        tabs.forEach(tab => {
+            tab.classList.remove('tab-active');
+            tab.classList.add('tab-inactive');
+        });
+
+        document.getElementById(tabName).classList.remove('hidden');
+        const activeButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+        activeButton.classList.add('tab-active');
+        activeButton.classList.remove('tab-inactive');
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchTab(tab.dataset.tab);
+        });
+    });
+    
+    switchTab('inicio');
+
+    const initPerformance = () => {
+        const checklist = document.getElementById('performance-checklist');
+        checklist.innerHTML = data.performance.map(item => `
+            <div class="card p-4 flex items-start gap-4">
+                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">✓</div>
+                <div>
+                    <h4 class="font-semibold text-lg">${item.setting} <span class="text-blue-600 font-bold ml-2">${item.value}</span></h4>
+                    <p class="text-gray-600 text-sm">${item.reason}</p>
+                </div>
+            </div>
+        `).join('');
+    };
+    
+    const initCamera = () => {
+        const archetypeSelector = document.getElementById('archetype-selector');
+        archetypeSelector.innerHTML = Object.keys(data.camera.archetypes).map(key => `
+            <button data-archetype="${key}" class="archetype-button py-2 px-5 rounded-full font-semibold border-2 transition-all duration-300">${data.camera.archetypes[key].name}</button>
+        `).join('');
+
+        const slidersContainer = document.getElementById('camera-sliders');
+        const sliders = [
+            { id: 'distance', name: 'Distância', min: 240, max: 300, step: 10 },
+            { id: 'height', name: 'Altura', min: 80, max: 120, step: 10 },
+            { id: 'angle', name: 'Ângulo', min: -6, max: 0, step: 1 },
+            { id: 'stiffness', name: 'Rigidez', min: 0.3, max: 0.8, step: 0.05 },
+        ];
+        slidersContainer.innerHTML = sliders.map(s => `
+            <div>
+                <label for="${s.id}" class="flex justify-between font-medium text-sm mb-1">
+                    <span>${s.name}</span>
+                    <span id="${s.id}-value">${currentSettings[s.id]}</span>
+                </label>
+                <input type="range" id="${s.id}" min="${s.min}" max="${s.max}" step="${s.step}" value="${currentSettings[s.id]}" class="w-full">
+            </div>
+        `).join('');
+
+        document.querySelectorAll('.archetype-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const archetypeKey = e.target.dataset.archetype;
+                currentSettings = { ...data.camera.archetypes[archetypeKey] };
+                updateCameraView();
+            });
+        });
+
+        sliders.forEach(s => {
+            document.getElementById(s.id).addEventListener('input', (e) => {
+                currentSettings[s.id] = parseFloat(e.target.value);
+                updateCameraView();
+            });
+        });
+
+        createCameraChart();
+        updateCameraView();
+    };
+
+    const updateCameraView = () => {
+        Object.keys(currentSettings).forEach(key => {
+            const slider = document.getElementById(key);
+            const valueLabel = document.getElementById(`${key}-value`);
+            if (slider) slider.value = currentSettings[key];
+            if (valueLabel) valueLabel.textContent = currentSettings[key].toFixed(key === 'stiffness' ? 2 : 0);
+        });
+        
+        document.querySelectorAll('.archetype-button').forEach(btn => {
+            btn.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+            btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+        });
+        const currentArchetype = Object.keys(data.camera.archetypes).find(key => 
+            data.camera.archetypes[key].distance === currentSettings.distance &&
+            data.camera.archetypes[key].height === currentSettings.height &&
+            data.camera.archetypes[key].angle === currentSettings.angle
+        );
+        if(currentArchetype) {
+            const activeBtn = document.querySelector(`[data-archetype="${currentArchetype}"]`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+                activeBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+            }
+        }
+
+        updateCameraChart();
+        updateProPlayerTable();
+    };
+    
+    const createCameraChart = () => {
+        const ctx = document.getElementById('cameraChart').getContext('2d');
+        cameraChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Visão de Campo', 'Controle Próximo', 'Estabilidade', 'Percepção de Velocidade'],
+                datasets: [{
+                    label: 'Estilo de Jogo',
+                    data: [0, 0, 0, 0],
+                    backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(0, 123, 255, 1)'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                        pointLabels: { font: { size: 12 } },
+                        suggestedMin: 0,
+                        suggestedMax: 100,
+                        ticks: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    };
+
+    const updateCameraChart = () => {
+        const { distance, height, stiffness } = currentSettings;
+        const control = 100 - ((distance - 240) / 60) * 50 - ((height - 80) / 40) * 50;
+        const vision = 100 - control;
+        const speedSense = (stiffness - 0.3) / 0.5 * 100;
+        const stability = 100 - speedSense;
+        cameraChart.data.datasets[0].data = [vision, control, stability, speedSense];
+        cameraChart.update();
+    };
+
+    const updateProPlayerTable = () => {
+        const tableBody = document.getElementById('pro-player-table');
+        const { distance, height, angle } = currentSettings;
+        const similarPros = data.camera.pros.filter(pro => 
+            Math.abs(pro.distance - distance) <= 10 &&
+            Math.abs(pro.height - height) <= 10 &&
+            Math.abs(pro.angle - angle) <= 1
+        ).slice(0, 5);
+
+        if (similarPros.length > 0) {
+            tableBody.innerHTML = similarPros.map(pro => `
+                <tr class="hover:bg-gray-50">
+                    <td class="py-2 px-3">${pro.name}</td>
+                    <td class="py-2 px-3 text-center">${pro.distance}</td>
+                    <td class="py-2 px-3 text-center">${pro.height}</td>
+                    <td class="py-2 px-3 text-center">${pro.angle}</td>
+                </tr>
+            `).join('');
+        } else {
+            tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Nenhum profissional com configurações exatamente iguais.</td></tr>`;
+        }
+    };
+
+    const initControls = () => {
+        const selector = document.getElementById('layout-selector');
+        selector.innerHTML = Object.keys(data.controls).map(key => `
+            <button data-layout="${key}" class="control-layout-button py-3 px-4 rounded-lg font-semibold border-2 transition-all duration-300 text-left">${data.controls[key].name}</button>
+        `).join('');
+
+        const diagram = document.getElementById('controller-diagram');
+        diagram.innerHTML = `
+            <div id="btn-l1" class="absolute top-[12%] left-[10%] w-[25%] h-[10%] bg-gray-300 rounded-t-lg flex items-center justify-center text-xs font-bold transition-all">L1/LB</div>
+            <div id="btn-r1" class="absolute top-[12%] right-[10%] w-[25%] h-[10%] bg-gray-300 rounded-t-lg flex items-center justify-center text-xs font-bold transition-all">R1/RB</div>
+            <div id="btn-l2" class="absolute top-0 left-[10%] w-[25%] h-[12%] bg-gray-400 rounded-t-lg flex items-center justify-center text-xs font-bold transition-all">L2/LT</div>
+            <div id="btn-r2" class="absolute top-0 right-[10%] w-[25%] h-[12%] bg-gray-400 rounded-t-lg flex items-center justify-center text-xs font-bold transition-all">R2/RT</div>
+            <div class="absolute top-[20%] left-0 w-full h-[80%] bg-gray-200 rounded-3xl"></div>
+            <div id="btn-quadrado" class="absolute top-1/2 left-[20%] -translate-y-1/2 w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center font-bold transition-all">□/X</div>
+            <div id="btn-circulo" class="absolute top-1/2 right-[20%] -translate-y-1/2 w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center font-bold transition-all">○/B</div>
+            <div id="btn-x" class="absolute top-[65%] left-[28%] w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center font-bold transition-all">X/A</div>
+            <div id="btn-triangulo" class="absolute top-[35%] left-[28%] w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center font-bold transition-all">△/Y</div>
+        `;
+
+        document.querySelectorAll('.control-layout-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                updateControlsView(e.target.dataset.layout);
+            });
+        });
+
+        updateControlsView('padrao_ouro');
+    };
+
+    const updateControlsView = (layoutKey) => {
+        document.querySelectorAll('.control-layout-button').forEach(btn => {
+            btn.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+            btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+        });
+        const activeBtn = document.querySelector(`[data-layout="${layoutKey}"]`);
+        activeBtn.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+        activeBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+
+        const layout = data.controls[layoutKey];
+        document.getElementById('layout-title').textContent = layout.name;
+        document.getElementById('layout-desc').textContent = layout.desc;
+
+        const allButtons = {
+            'R1/RB': 'btn-r1', 'L1/LB': 'btn-l1',
+            'Quadrado/X': 'btn-quadrado', 'Círculo/B': 'btn-circulo',
+            'L2/LT': 'btn-l2'
+        };
+
+        Object.values(allButtons).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerHTML = el.innerHTML.split('<br>')[0];
+                el.classList.remove('bg-yellow-400', 'bg-green-400', 'bg-red-400', 'bg-purple-400');
+                el.classList.add('bg-gray-300');
+            }
+        });
+
+        const colorMap = { boost: 'bg-green-400', powerslide: 'bg-yellow-400', nar: 'bg-yellow-400', arl: 'bg-red-400', arr: 'bg-purple-400' };
+
+        for (const [action, binding] of Object.entries(layout.bindings)) {
+            if (allButtons[binding]) {
+                const btnId = allButtons[binding];
+                const btnEl = document.getElementById(btnId);
+                if (btnEl) {
+                    btnEl.classList.remove('bg-gray-300');
+                    btnEl.classList.add(colorMap[action]);
+                    const actionText = action.replace('powerslide', 'slide').replace('nar', 'NAR').replace('arl', 'ARL').replace('arr', 'ARR');
+                    if (!btnEl.innerHTML.includes(actionText)) {
+                        btnEl.innerHTML += `<br><span class="text-xs opacity-80">${actionText}</span>`;
+                    }
+                }
+            }
+        }
+    };
+
+    const initTraining = () => {
+        const grid = document.getElementById('training-packs-grid');
+        const filterButtons = document.querySelectorAll('.filter-button');
+
+        const renderPacks = (filter) => {
+            const filteredPacks = (filter === 'all') ? data.trainingPacks : data.trainingPacks.filter(p => p.category === filter);
+            grid.innerHTML = filteredPacks.map(pack => `
+                <div class="card p-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold">${pack.name}</h4>
+                        <p class="text-sm text-gray-600 mb-2">${pack.focus}</p>
+                        <p class="text-xs bg-gray-100 text-gray-800 font-mono p-2 rounded">${pack.code}</p>
+                    </div>
+                    <button class="copy-code-button mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors" data-code="${pack.code}">Copiar Código</button>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.copy-code-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const code = e.target.dataset.code;
+                    navigator.clipboard.writeText(code).then(() => {
+                        e.target.textContent = 'Copiado!';
+                        setTimeout(() => { e.target.textContent = 'Copiar Código'; }, 2000);
+                    });
+                });
+            });
+        };
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('bg-blue-500', 'text-white');
+                    btn.classList.add('bg-white', 'text-gray-700');
+                });
+                e.target.classList.add('bg-blue-500', 'text-white');
+                e.target.classList.remove('bg-white', 'text-gray-700');
+                renderPacks(e.target.dataset.filter);
+            });
+        });
+
+        renderPacks('all');
+    };
+
+    initPerformance();
+    initCamera();
+    initControls();
+    initTraining();
+});
+</script>
+</body>
+</html>
