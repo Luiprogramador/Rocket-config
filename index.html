@@ -453,8 +453,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const { distance, height, stiffness } = currentSettings;
         const control = 100 - ((distance - 240) / 60) * 50 - ((height - 80) / 40) * 50;
         const vision = 100 - control;
-        const speedSense = (stiffness - 0.3) / 0.5 * 100;
-        const stability = 100 - speedSense;
+        const stability = (stiffness - 0.3) / 0.5 * 100;
+        const speedSense = 100 - stability;
         cameraChart.data.datasets[0].data = [vision, control, stability, speedSense];
         cameraChart.update();
     };
