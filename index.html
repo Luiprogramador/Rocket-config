@@ -3,45 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Chosen Palette: Warm Neutrals & Subtle Blue -->
-    <!-- Application Structure Plan: A thematic, tab-based single-page application was chosen to allow users to non-linearly access specific configuration areas (Camera, Controls, etc.) without overwhelming them. This dashboard approach transforms the report's linear text into self-contained, interactive modules (e.g., a camera configurator, a control layout visualizer), which is more aligned with a user's goal of actively setting up their game rather than passively reading a document. The flow is: Home -> Performance (quick setup) -> Camera (deep dive/interactive) -> Controls (visual comparison) -> Training (utility). This structure prioritizes user action and exploration. -->
-    <!-- Visualization & Content Choices: 
-        - Report Info: Camera settings & archetypes -> Goal: Compare & Personalize -> Viz/Method: Interactive sliders linked to a Radar Chart (Chart.js) and a dynamic table. -> Interaction: Selecting an archetype presets sliders; moving sliders updates the chart and table in real-time. -> Justification: Visually demonstrates the trade-offs (e.g., field vision vs. car control) and connects user choices to pro player data, making abstract concepts tangible.
-        - Report Info: Control layouts -> Goal: Compare & Understand -> Viz/Method: An HTML/CSS-based visual diagram of a controller. -> Interaction: Buttons for different layouts update the diagram's highlights and explanatory text. -> Justification: A visual map is far more intuitive for control bindings than a text table.
-        - Report Info: Training packs -> Goal: Organize & Provide Utility -> Viz/Method: A filterable grid of cards. -> Interaction: Filter buttons and a "copy code" button. -> Justification: Turns a static list into a practical, easy-to-use tool.
-        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <title>Guia Interativo de Configurações - Rocket League</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8f7f4;
-            color: #2c2c2c;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
         }
-        .tab-active {
-            background-color: #007BFF;
-            color: #ffffff;
-            border-color: #007BFF;
+        
+        h1, h2, h3, .font-gamer { font-family: 'Rajdhani', sans-serif; }
+
+        :root {
+            --neon-blue: #00f2fe;
+            --neon-pink: #ec4899;
+            --neon-blue-glow: rgba(0, 242, 254, 0.5);
         }
-        .tab-inactive {
-            background-color: #ffffff;
-            color: #333333;
-            border-color: #e0e0e0;
-        }
+
         .card {
-            background-color: #ffffff;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            transition: all 0.3s ease;
+            background-color: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
         .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+            transform: translateY(-2px);
+            border-color: rgba(0, 242, 254, 0.2);
         }
+
+        .tab-button {
+            background-color: rgba(15, 23, 42, 0.5);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab-active {
+            color: var(--neon-blue);
+            border-color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue-glow);
+            box-shadow: inset 0 0 20px rgba(0, 242, 254, 0.1), 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .tab-inactive:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            cursor: pointer;
+            outline: none;
+            border-radius: 9999px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 20px;
+            width: 20px;
+            background-color: var(--neon-blue);
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px var(--neon-blue);
+            transition: .2s ease-in-out;
+        }
+        
+        input[type=range]::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            background-color: var(--neon-blue);
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px var(--neon-blue);
+            transition: .2s ease-in-out;
+        }
+
         .chart-container {
             position: relative;
             width: 100%;
@@ -51,113 +102,109 @@
             height: 300px;
             max-height: 400px;
         }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 350px;
-            }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+
+        .info-box {
+            background-color: rgba(0, 242, 254, 0.05);
+            border: 1px solid rgba(0, 242, 254, 0.2);
         }
-        .slider-track {
-            background-color: #e5e7eb;
-        }
-        .slider-thumb {
-            background-color: #007BFF;
-        }
-        input[type=range] {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            cursor: pointer;
-            outline: none;
-            border-radius: 9999px;
-            height: 8px;
-            background: #e5e7eb;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            height: 20px;
-            width: 20px;
-            background-color: #007BFF;
-            border-radius: 50%;
-            border: none;
-            transition: .2s ease-in-out;
-        }
-        input[type=range]::-moz-range-thumb {
-            height: 20px;
-            width: 20px;
-            background-color: #007BFF;
-            border-radius: 50%;
-            border: none;
-            transition: .2s ease-in-out;
-        }
+        
+        table { background-color: transparent !important; }
+        thead { background-color: rgba(0, 0, 0, 0.2) !important; }
+        tbody tr:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
+        
+        /* Custom Scrollbar para o Textarea */
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+        textarea::-webkit-scrollbar-thumb { background: rgba(0,242,254,0.3); border-radius: 4px; }
+        textarea::-webkit-scrollbar-thumb:hover { background: rgba(0,242,254,0.5); }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased selection:bg-cyan-500 selection:text-white">
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Painel de Controlo de Configurações</h1>
-            <p class="text-lg text-gray-600 mt-2">O seu guia interativo para a otimização no Rocket League</p>
+        <header class="text-center mb-12 mt-4">
+            <h1 class="text-5xl md:text-6xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 font-gamer" style="text-shadow: 0 0 40px rgba(0,242,254,0.3);">
+                ROCKET CONFIG LAB
+            </h1>
+            <p class="text-lg text-slate-400 mt-2 font-medium tracking-wide">OTIMIZAÇÃO DE ALTA PERFORMANCE</p>
         </header>
 
-        <nav class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
-            <button data-tab="inicio" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Início</button>
-            <button data-tab="performance" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Performance</button>
-            <button data-tab="camera" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Câmera</button>
-            <button data-tab="controles" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Controles</button>
-            <button data-tab="sensibilidade" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Sensibilidade</button>
-            <button data-tab="treino" class="tab-button text-sm md:text-base font-semibold py-2 px-4 rounded-full border-2 transition-all duration-300">Treino</button>
+        <nav class="flex flex-wrap justify-center gap-3 md:gap-4 mb-10 font-gamer">
+            <button data-tab="inicio" class="tab-button text-sm md:text-lg font-bold py-2 px-6 rounded-full transition-all duration-300 uppercase tracking-wider">Início</button>
+            <button data-tab="performance" class="tab-button text-sm md:text-lg font-bold py-2 px-6 rounded-full transition-all duration-300 uppercase tracking-wider">Vídeo</button>
+            <button data-tab="camera" class="tab-button text-sm md:text-lg font-bold py-2 px-6 rounded-full transition-all duration-300 uppercase tracking-wider">Câmera</button>
+            <button data-tab="controles" class="tab-button text-sm md:text-lg font-bold py-2 px-6 rounded-full transition-all duration-300 uppercase tracking-wider">Controles</button>
+            <button data-tab="sensibilidade" class="tab-button text-sm md:text-lg font-bold py-2 px-6 rounded-full transition-all duration-300 uppercase tracking-wider">Sense</button>
+            <button data-tab="treino" class="tab-button text-sm md:text-lg font-bold py-2 px-6 rounded-full transition-all duration-300 uppercase tracking-wider">Treino</button>
         </nav>
 
         <main>
             <div id="inicio" class="tab-content">
-                <div class="card p-6 md:p-8">
-                    <h2 class="text-2xl font-bold mb-4">Bem-vindo ao seu Laboratório de Configurações!</h2>
-                    <p class="text-gray-700 mb-4">No Rocket League, as suas configurações são a fundação da sua performance. Uma configuração inadequada pode limitar o seu progresso, não importa o quanto treine. Este painel foi criado para o ajudar a entender os princípios por trás de cada ajuste e a construir uma configuração que pareça uma extensão natural do seu corpo.</p>
-                    <p class="text-gray-700">Use as abas acima para navegar pelas diferentes áreas de otimização. Em cada secção, encontrará ferramentas interativas e dados baseados em jogadores profissionais para o guiar. O objetivo não é copiar, mas sim entender, experimentar e criar o que funciona melhor para **você**.</p>
+                <div class="card p-8 md:p-10 text-center max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold mb-6 text-cyan-400 font-gamer uppercase tracking-wide">Bem-vindo à Arena de Setup</h2>
+                    <p class="text-slate-300 mb-6 text-lg leading-relaxed">No Rocket League, suas configurações definem o seu teto mecânico. Jogar com input lag ou ângulos cegos limita seu potencial antes mesmo do kick-off.</p>
+                    <p class="text-slate-300 text-lg leading-relaxed mb-8">Navegue pelas abas acima para calibrar seu jogo. Use dados de pro players, entenda as "zonas mortas" e construa a memória muscular correta. <strong class="text-cyan-400 font-semibold">O meta começa aqui.</strong></p>
+                    
+                    <div class="mt-8 border-t border-slate-700/50 pt-8">
+                        <h3 class="text-2xl font-bold mb-3 text-pink-500 font-gamer uppercase tracking-wide">Compartilhe seu Meta</h3>
+                        <p class="text-slate-400 mb-6 text-sm">Ajustou sua Câmera e seus Controles nas outras abas? Gere seu card de perfil abaixo para colar no Discord ou WhatsApp.</p>
+                        
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 mb-6 text-left shadow-inner">
+                            <textarea id="export-textarea" class="w-full bg-transparent text-cyan-300 font-mono text-sm resize-none outline-none h-40" readonly>Seu setup aparecerá aqui. Configure o site e clique em "Gerar Card"!</textarea>
+                        </div>
+                        
+                        <button id="btn-export-setup" class="bg-pink-500 text-white py-3 px-8 rounded-full font-bold uppercase tracking-wide transition-all shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:bg-pink-400 hover:shadow-[0_0_25px_rgba(236,72,153,0.6)]">
+                            Gerar e Copiar Setup
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div id="performance" class="tab-content hidden">
                 <div class="card p-6 md:p-8">
-                    <h2 class="text-2xl font-bold mb-2">Arquitetura da Performance: Vídeo e Interface</h2>
-                    <p class="text-gray-600 mb-6">Para um jogo de reações rápidas, a performance e a clareza superam a beleza gráfica. O objetivo é maximizar os frames por segundo (FPS) e minimizar o "input lag". Use esta checklist para otimizar o seu jogo.</p>
-                    <div id="performance-checklist" class="space-y-4"></div>
+                    <h2 class="text-3xl font-bold mb-2 text-cyan-400 font-gamer uppercase tracking-wide">Arquitetura de Vídeo</h2>
+                    <p class="text-slate-400 mb-8 text-lg">Priorize frames e clareza visual. O objetivo é remover distrações e minimizar a latência entre o controle e a tela.</p>
+                    <div id="performance-checklist" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
             </div>
 
             <div id="camera" class="tab-content hidden">
                  <div class="card p-6 md:p-8">
-                    <h2 class="text-2xl font-bold mb-2">A Janela para o Campo: Configuração de Câmera</h2>
-                    <p class="text-gray-600 mb-6">A câmera é a sua ferramenta mais importante para a consciência situacional. Escolha um arquétipo para começar, ou ajuste os sliders para criar a sua própria configuração. Observe como o gráfico e a lista de profissionais se atualizam para refletir as suas escolhas.</p>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <h2 class="text-3xl font-bold mb-2 text-cyan-400 font-gamer uppercase tracking-wide">FOV e Consciência Espacial</h2>
+                    <p class="text-slate-400 mb-8 text-lg">Ajuste seu arquétipo. Observe no radar como cada milímetro afeta seu controle próximo vs. visão periférica.</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
                         <div>
-                            <h3 class="text-xl font-semibold mb-4 text-center">1. Escolha o seu Arquétipo</h3>
-                            <div id="archetype-selector" class="flex justify-center gap-4 mb-8"></div>
+                            <h3 class="text-2xl font-bold mb-6 text-center font-gamer text-slate-200 uppercase">1. Selecione a Base</h3>
+                            <div id="archetype-selector" class="flex flex-wrap justify-center gap-3 mb-10"></div>
                             
-                            <h3 class="text-xl font-semibold mb-4 text-center">2. Ajuste Fino</h3>
-                            <div id="camera-sliders" class="space-y-4"></div>
-                             <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p class="text-sm text-blue-800"><strong class="font-semibold">Dica:</strong> A relação entre <strong class="font-semibold">Altura</strong> e <strong class="font-semibold">Ângulo</strong> é crucial. Uma altura baixa (90-100) com um ângulo acentuado (-4 a -5) favorece o controlo mecânico. Uma altura elevada (100-110) com um ângulo suave (-3 a -4) favorece a visão de campo.</p>
+                            <h3 class="text-2xl font-bold mb-6 text-center font-gamer text-slate-200 uppercase">2. Ajuste Fino</h3>
+                            <div id="camera-sliders" class="space-y-6"></div>
+                            
+                             <div class="mt-8 p-5 info-box rounded-xl">
+                                <p class="text-sm text-cyan-200"><strong class="font-bold text-cyan-400 uppercase tracking-wider">Dica Pro:</strong> Altura baixa (90-100) com ângulo agressivo (-4 a -5) facilita resets e dribles. Altura elevada (100-110) com ângulo suave (-3 a -4) melhora a leitura de passes e 50/50s.</p>
                             </div>
                         </div>
+                        
                         <div>
-                            <h3 class="text-xl font-semibold mb-4 text-center">Análise do Estilo de Jogo</h3>
+                            <h3 class="text-2xl font-bold mb-4 text-center font-gamer text-slate-200 uppercase">Radar de Estilo</h3>
                             <div class="chart-container mb-8">
                                 <canvas id="cameraChart"></canvas>
                             </div>
-                            <h3 class="text-xl font-semibold mb-4 text-center">Profissionais com Estilo Similar</h3>
-                            <div class="overflow-x-auto max-h-60">
-                                <table class="min-w-full bg-white">
-                                    <thead class="bg-gray-100">
+                            
+                            <h3 class="text-2xl font-bold mb-4 text-center font-gamer text-slate-200 uppercase">Pros Similares</h3>
+                            <div class="overflow-hidden rounded-lg border border-slate-700">
+                                <table class="min-w-full text-slate-300">
+                                    <thead class="text-cyan-400 uppercase text-xs tracking-wider">
                                         <tr>
-                                            <th class="text-left py-2 px-3 font-semibold text-sm">Jogador</th>
-                                            <th class="text-center py-2 px-3 font-semibold text-sm">Dist.</th>
-                                            <th class="text-center py-2 px-3 font-semibold text-sm">Alt.</th>
-                                            <th class="text-center py-2 px-3 font-semibold text-sm">Âng.</th>
+                                            <th class="text-left py-3 px-4 font-bold">Jogador</th>
+                                            <th class="text-center py-3 px-4 font-bold">Dist.</th>
+                                            <th class="text-center py-3 px-4 font-bold">Alt.</th>
+                                            <th class="text-center py-3 px-4 font-bold">Âng.</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="pro-player-table" class="divide-y divide-gray-200">
+                                    <tbody id="pro-player-table" class="divide-y divide-slate-700">
                                     </tbody>
                                 </table>
                             </div>
@@ -168,18 +215,38 @@
 
             <div id="controles" class="tab-content hidden">
                  <div class="card p-6 md:p-8">
-                    <h2 class="text-2xl font-bold mb-2">O Ápice do Controlo: Mapeamento de Botões</h2>
-                    <p class="text-gray-600 mb-6">O layout de botões padrão limita o seu potencial mecânico. Mudar para um layout otimizado, especialmente um que incorpore o Rolamento Aéreo Direcional (DAR), é o passo mais importante para o jogo avançado. Selecione um layout para ver as mudanças e entender as suas vantagens.</p>
+                    <h2 class="text-3xl font-bold mb-2 text-pink-500 font-gamer uppercase tracking-wide">Mapeamento Tático</h2>
+                    <p class="text-slate-400 mb-8 text-lg">O layout padrão é uma âncora. Para mecânicas avançadas (DAR), você precisa de dedos independentes para Boost, Pulo e Rotação Aérea.</p>
+                    
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                         <div class="flex flex-col items-center">
-                            <h3 class="text-xl font-semibold mb-4 text-center">Layouts Recomendados</h3>
-                            <div id="layout-selector" class="flex flex-col items-stretch gap-3 mb-6 w-full max-w-xs"></div>
-                            <div id="layout-info" class="p-4 bg-gray-50 border border-gray-200 rounded-lg w-full max-w-xs">
-                                <h4 id="layout-title" class="font-bold text-lg mb-2"></h4>
-                                <p id="layout-desc" class="text-sm text-gray-700"></p>
+                            <h3 class="text-2xl font-bold mb-6 text-center font-gamer text-slate-200 uppercase">Layouts Meta</h3>
+                            <div id="layout-selector" class="flex flex-col items-stretch gap-3 mb-6 w-full max-w-sm"></div>
+                            
+                            <div id="layout-info" class="p-5 info-box rounded-xl w-full max-w-sm">
+                                <h4 id="layout-title" class="font-bold text-xl mb-2 text-cyan-400 font-gamer uppercase tracking-wide"></h4>
+                                <p id="layout-desc" class="text-slate-300 leading-relaxed"></p>
                             </div>
+                        
+                            <div id="custom-controls-panel" class="hidden mt-4 w-full max-w-sm flex-col gap-2">
+                                </div>
                         </div>
-                        <div id="controller-diagram" class="relative w-full max-w-md mx-auto aspect-[4/3]">
+                        
+                        <div id="controller-diagram" class="relative w-full max-w-md mx-auto aspect-[4/3] bg-slate-900/50 rounded-2xl border border-slate-700/50 p-4 shadow-inner">
+                            <div id="btn-l2" class="absolute top-4 left-[15%] w-[20%] h-[12%] bg-slate-700 rounded-t-xl flex flex-col items-center justify-center text-xs font-bold text-slate-300 transition-colors border-t border-slate-500"><span>L2/LT</span></div>
+                            <div id="btn-r2" class="absolute top-4 right-[15%] w-[20%] h-[12%] bg-slate-700 rounded-t-xl flex flex-col items-center justify-center text-xs font-bold text-slate-300 transition-colors border-t border-slate-500"><span>R2/RT</span></div>
+                            <div id="btn-l1" class="absolute top-[18%] left-[15%] w-[20%] h-[10%] bg-slate-600 rounded-b-lg flex flex-col items-center justify-center text-xs font-bold text-slate-200 transition-colors shadow-lg z-10"><span>L1/LB</span></div>
+                            <div id="btn-r1" class="absolute top-[18%] right-[15%] w-[20%] h-[10%] bg-slate-600 rounded-b-lg flex flex-col items-center justify-center text-xs font-bold text-slate-200 transition-colors shadow-lg z-10"><span>R1/RB</span></div>
+                            <div class="absolute top-[25%] left-[5%] w-[90%] h-[70%] bg-slate-800 rounded-[3rem] shadow-2xl border border-slate-700"></div>
+                            <div class="absolute top-[45%] left-[18%] w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center opacity-50"><div class="w-8 h-8 bg-slate-900 rounded-sm transform rotate-45"></div></div>
+                            <div class="absolute top-[65%] left-[30%] w-14 h-14 bg-slate-900 rounded-full border-2 border-slate-700 shadow-inner"></div>
+                            <div class="absolute top-[65%] right-[30%] w-14 h-14 bg-slate-900 rounded-full border-2 border-slate-700 shadow-inner"></div>
+                            <div class="absolute top-[40%] right-[12%] w-24 h-24 flex items-center justify-center">
+                                <div id="btn-triangulo" class="absolute top-0 w-9 h-9 bg-slate-600 rounded-full flex flex-col items-center justify-center font-bold text-slate-300 transition-colors shadow-md text-[10px]"><span>△</span></div>
+                                <div id="btn-quadrado" class="absolute left-0 w-9 h-9 bg-slate-600 rounded-full flex flex-col items-center justify-center font-bold text-slate-300 transition-colors shadow-md text-[10px]"><span>□</span></div>
+                                <div id="btn-circulo" class="absolute right-0 w-9 h-9 bg-slate-600 rounded-full flex flex-col items-center justify-center font-bold text-slate-300 transition-colors shadow-md text-[10px]"><span>○</span></div>
+                                <div id="btn-x" class="absolute bottom-0 w-9 h-9 bg-slate-600 rounded-full flex flex-col items-center justify-center font-bold text-slate-300 transition-colors shadow-md text-[10px]"><span>X</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -187,28 +254,50 @@
 
             <div id="sensibilidade" class="tab-content hidden">
                 <div class="card p-6 md:p-8">
-                    <h2 class="text-2xl font-bold mb-2">Busca pela Fluidez: Sensibilidade e Zonas Mortas</h2>
-                    <p class="text-gray-600 mb-6">Estas configurações governam como os seus comandos analógicos são traduzidos em movimento. Otimizá-las é crucial para um controlo que seja rápido, reativo e preciso.</p>
-                    <div class="space-y-6">
-                        <div>
-                            <h3 class="text-xl font-semibold mb-2">Sensibilidade de Direção e Aérea</h3>
-                            <p class="text-gray-700 mb-3">A maioria dos jogadores de alto nível usa valores entre 1.20 e 1.50 para reações mais rápidas. É recomendado manter ambos os valores idênticos para consistência na memória muscular.</p>
-                            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p class="text-blue-800"><strong class="font-semibold">Ponto de Partida Recomendado:</strong> 1.20 para ambos.</p>
-                            </div>
+                    <h2 class="text-3xl font-bold mb-2 text-cyan-400 font-gamer uppercase tracking-wide">Calibração de Analógicos</h2>
+                    <p class="text-slate-400 mb-8 text-lg">Ajuste o quão rápido o carro responde ao seu polegar e crie proteções contra "backflips" acidentais.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                            <h3 class="text-xl font-bold mb-3 text-slate-200">Sensibilidade (Steer/Aerial)</h3>
+                            <p class="text-slate-400 mb-4 text-sm">Velocidade da rotação no chão e no ar. Mantenha os dois iguais.</p>
+                            <div class="p-3 bg-cyan-900/30 border border-cyan-500/30 rounded-lg text-cyan-300 text-sm font-semibold">Meta: 1.20 a 1.50</div>
                         </div>
-                        <div>
-                            <h3 class="text-xl font-semibold mb-2">Zona Morta do Controle (Controller Deadzone)</h3>
-                            <p class="text-gray-700 mb-3">Este valor combate o "stick drift" e depende do desgaste do seu controle. Um valor baixo (ex: 0.05) é mais reativo, enquanto um valor alto (ex: 0.15) oferece mais estabilidade.</p>
-                             <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p class="text-sm text-blue-800"><strong class="font-semibold">Como encontrar o seu valor ideal:</strong> No menu do jogo, diminua a deadzone para 0.00. Se o carro virar sozinho, aumente em 0.01 até parar. Esse é o seu mínimo funcional.</p>
-                            </div>
+                        <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                            <h3 class="text-xl font-bold mb-3 text-slate-200">Controller Deadzone</h3>
+                            <p class="text-slate-400 mb-4 text-sm">Combate o drift do analógico. Valores baixos dão respostas microscópicas.</p>
+                            <div class="p-3 bg-cyan-900/30 border border-cyan-500/30 rounded-lg text-cyan-300 text-sm font-semibold">Meta: 0.05 a 0.10</div>
                         </div>
-                         <div>
-                            <h3 class="text-xl font-semibold mb-2">Zona Morta de Esquiva (Dodge Deadzone)</h3>
-                            <p class="text-gray-700 mb-3">Um valor alto aqui evita "backflips" acidentais ao tentar fazer um "fast aerial".</p>
-                             <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p class="text-blue-800"><strong class="font-semibold">Faixa Recomendada:</strong> 0.60 a 0.80.</p>
+                         <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                            <h3 class="text-xl font-bold mb-3 text-slate-200">Dodge Deadzone</h3>
+                            <p class="text-slate-400 mb-4 text-sm">O quanto você precisa puxar o analógico para o jogo registrar um flip/esquiva.</p>
+                            <div class="p-3 bg-pink-900/30 border border-pink-500/30 rounded-lg text-pink-400 text-sm font-semibold">Evita Backflip: 0.60 a 0.80</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 bg-slate-800/50 p-6 md:p-8 rounded-xl border border-slate-700">
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                            <div class="w-full md:w-1/2">
+                                <h3 class="text-2xl font-bold mb-3 text-pink-500 font-gamer uppercase tracking-wide">Laboratório de Analógico</h3>
+                                <p class="text-slate-400 mb-6 text-sm leading-relaxed">Entenda o impacto do formato do seu analógico. O formato Padrão (Cross) recorta as diagonais. O formato Quadrado (Square) permite inputs diagonais a 100%, acelerando mecânicas como Speedflips e Tornado Spins.</p>
+                                <div class="space-y-4">
+                                    <h4 class="text-slate-200 font-bold text-sm uppercase tracking-wider mb-2">Formato da Entrada (Shape)</h4>
+                                    <div class="flex gap-3">
+                                        <button id="btn-shape-cross" class="shape-btn flex-1 py-2 px-4 rounded-lg font-bold text-sm border-2 border-cyan-500 bg-cyan-500/10 text-cyan-400 shadow-[0_0_10px_rgba(0,242,254,0.3)] transition-all">Padrão (Cross)</button>
+                                        <button id="btn-shape-square" class="shape-btn flex-1 py-2 px-4 rounded-lg font-bold text-sm border border-slate-600 text-slate-400 hover:bg-slate-700 transition-all">Quadrado (Steam)</button>
+                                    </div>
+                                </div>
+                                <div class="mt-6 p-4 bg-cyan-900/20 border border-cyan-500/30 rounded-lg">
+                                    <p class="text-xs text-cyan-300"><strong class="font-bold text-cyan-400">Nota Técnica:</strong> O jogo processa inputs nativamente como 'Cross'. O 'Square' é forçado via Steam ou DS4Windows. O BakkesMod NÃO altera o formato ou a sensibilidade base do jogo.</p>
+                                </div>
+                            </div>
+                            <div class="w-full md:w-1/2 flex justify-center">
+                                <div class="relative w-64 h-64 bg-slate-900 rounded-xl border-2 border-slate-700 shadow-inner flex items-center justify-center overflow-hidden">
+                                    <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:16px_16px]"></div>
+                                    <div class="absolute w-full h-[2px] bg-slate-600/50"></div>
+                                    <div class="absolute h-full w-[2px] bg-slate-600/50"></div>
+                                    <canvas id="deadzoneCanvas" width="240" height="240" class="z-10"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -217,16 +306,32 @@
 
             <div id="treino" class="tab-content hidden">
                  <div class="card p-6 md:p-8">
-                    <h2 class="text-2xl font-bold mb-2">Fase de Adaptação: Pacotes de Treino</h2>
-                    <p class="text-gray-600 mb-6">Mudar as configurações exige paciência e treino para construir uma nova memória muscular. Use estes pacotes de treino personalizados para acelerar o processo. Filtre por habilidade e clique para copiar o código.</p>
-                    <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-6">
-                        <button data-filter="all" class="filter-button bg-blue-500 text-white py-2 px-4 rounded-full font-semibold">Todos</button>
-                        <button data-filter="Controle" class="filter-button bg-white text-gray-700 py-2 px-4 rounded-full font-semibold border">Controle</button>
-                        <button data-filter="Aéreo" class="filter-button bg-white text-gray-700 py-2 px-4 rounded-full font-semibold border">Aéreo</button>
-                        <button data-filter="Defesa" class="filter-button bg-white text-gray-700 py-2 px-4 rounded-full font-semibold border">Defesa</button>
-                        <button data-filter="Ataque" class="filter-button bg-white text-gray-700 py-2 px-4 rounded-full font-semibold border">Ataque</button>
+                    <h2 class="text-3xl font-bold mb-2 text-pink-500 font-gamer uppercase tracking-wide">Módulos de Memória Muscular</h2>
+                    <p class="text-slate-400 mb-8 text-lg">Códigos essenciais para adaptar seu cérebro às novas configurações. Clique para copiar e cole no menu "Treino Personalizado" do jogo.</p>
+                    
+                    <div class="flex flex-col gap-4 mb-8">
+                        <div class="flex flex-wrap justify-center gap-3">
+                            <span class="text-slate-400 font-bold uppercase tracking-wider text-xs flex items-center mr-2">Foco:</span>
+                            <button data-filter="all" data-type="category" class="filter-button active bg-cyan-500 text-slate-900 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all shadow-[0_0_15px_rgba(0,242,254,0.4)]">Todos</button>
+                            <button data-filter="Controle" data-type="category" class="filter-button bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700">Car Control</button>
+                            <button data-filter="Aéreo" data-type="category" class="filter-button bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700">Aéreo</button>
+                            <button data-filter="Defesa" data-type="category" class="filter-button bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700">Defesa</button>
+                            <button data-filter="Ataque" data-type="category" class="filter-button bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700">Ataque</button>
+                        </div>
+                        
+                        <div class="flex flex-wrap justify-center gap-3">
+                            <span class="text-slate-400 font-bold uppercase tracking-wider text-xs flex items-center mr-2">Trilha de Rank:</span>
+                            <button data-filter="all" data-type="rank" class="filter-button-rank active bg-pink-500 text-white py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all shadow-[0_0_15px_rgba(236,72,153,0.4)]">Todos os Ranks</button>
+                            
+                            <button data-filter="Ouro/Platina" data-type="rank" class="filter-button-rank bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700">Ouro/Platina</button>
+                            
+                            <button data-filter="Diamante" data-type="rank" class="filter-button-rank bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700">Diamante</button>
+                            <button data-filter="Champion" data-type="rank" class="filter-button-rank bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700">Champion</button>
+                            <button data-filter="Grand Champion" data-type="rank" class="filter-button-rank bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700">Grand Champion</button>
+                        </div>
                     </div>
-                    <div id="training-packs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    
+                    <div id="training-packs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     </div>
                  </div>
             </div>
@@ -235,83 +340,95 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // ESTADO GLOBAL DA APLICAÇÃO
+    let currentSettings = { distance: 270, height: 100, angle: -4, stiffness: 0.45 }; // Começa com Híbrido
+    let currentControlLayout = 'padrao_ouro'; // Começa com Padrão Ouro
+
     const data = {
         performance: [
-            { setting: 'Modo de Exibição', value: 'Tela Cheia (Fullscreen)', reason: 'Minimiza o input lag do sistema operativo.' },
-            { setting: 'Sincronização Vertical', value: 'Desligado', reason: 'Causa input lag significativo, prejudicial à reatividade.' },
-            { setting: 'Qualidade de Renderização', value: 'Alta Performance', reason: 'Maximiza os FPS.' },
-            { setting: 'FPS Máximo', value: 'Igual ou superior à taxa de atualização do monitor', reason: 'Garante a máxima fluidez e a menor latência.' },
-            { setting: 'Traves Transparentes', value: 'Ligado', reason: 'Essencial para manter a visão clara ao defender ou atacar.' },
-            { setting: 'Vibração da Câmera', value: 'Desligado', reason: 'Remove perturbações visuais desnecessárias.' },
-            { setting: 'Vibração do Controle', value: 'Desligado', reason: 'Remove distrações táteis que podem interferir na precisão.' },
-            { setting: 'Todos os Efeitos Gráficos', value: 'Desligado/Baixo', reason: 'Remove "ruído visual" e maximiza os FPS (Bloom, Lens Flares, etc.).' }
+            { setting: 'Modo de Exibição', value: 'Tela Cheia', reason: 'Essencial: Minimiza o input lag do sistema.' },
+            { setting: 'Vsync', value: 'Desligado', reason: 'Causa input lag altíssimo. Nunca use em jogos competitivos.' },
+            { setting: 'Qualidade Render', value: 'Alta Performance', reason: 'Maximiza os frames brutos gerados pela GPU.' },
+            { setting: 'FPS Máximo', value: 'Monitor Hz +', reason: 'Desbloqueado ou um pouco acima da taxa do seu monitor.' },
+            { setting: 'Traves Transp.', value: 'Ligado', reason: 'Remove pontos cegos críticos ao defender dentro do gol.' },
+            { setting: 'Vibração Câmera', value: 'Desligado', reason: 'Remove a trepidação visual ao bater na bola.' },
+            { setting: 'Efeitos (Bloom)', value: 'Desligado', reason: 'Limpa o visual da arena e corta distrações luminosas.' }
         ],
         camera: {
             archetypes: {
                 mecanico: { name: 'Mecânico', fov: 110, distance: 270, height: 90, angle: -5, stiffness: 0.5, swivelSpeed: 5.0, transitionSpeed: 1.2 },
                 hibrido: { name: 'Híbrido', fov: 110, distance: 270, height: 100, angle: -4, stiffness: 0.45, swivelSpeed: 6.0, transitionSpeed: 1.0 },
-                estrategista: { name: 'Estrategista', fov: 110, distance: 280, height: 110, angle: -3, stiffness: 0.4, swivelSpeed: 7.0, transitionSpeed: 1.0 }
+                estrategista: { name: 'Visão de Jogo', fov: 110, distance: 280, height: 110, angle: -3, stiffness: 0.4, swivelSpeed: 7.0, transitionSpeed: 1.0 }
             },
             pros: [
-                { name: '(april)', distance: 260, height: 90, angle: -5 },
-                { name: 'AYYJAYY', distance: 270, height: 90, angle: -4 },
-                { name: 'Ahmad', distance: 270, height: 90, angle: -5 },
-                { name: 'GarrettG', distance: 270, height: 110, angle: -4 },
-                { name: 'Squishy Muffinz', distance: 270, height: 100, angle: -3 },
-                { name: 'Addzey', distance: 270, height: 100, angle: -4 },
-                { name: 'Jstn', distance: 270, height: 110, angle: -3 },
-                { name: '1zen', distance: 280, height: 110, angle: -3 },
-                { name: 'Alanis', distance: 270, height: 110, angle: -3 },
-                { name: 'ApparentlyJack', distance: 270, height: 100, angle: -3 },
-                { name: 'Atow.', distance: 270, height: 100, angle: -5 },
+                { name: 'Zen', distance: 270, height: 90, angle: -5 },
+                { name: 'Monkey Moon', distance: 270, height: 100, angle: -3 },
+                { name: 'Vatira', distance: 270, height: 100, angle: -4 },
+                { name: 'Firstkiller', distance: 270, height: 110, angle: -3 },
                 { name: 'BeastMode', distance: 260, height: 100, angle: -3 },
+                { name: 'Joyo', distance: 270, height: 100, angle: -4 },
+                { name: 'ApparentlyJack', distance: 270, height: 100, angle: -3 },
             ]
         },
         controls: {
             padrao_ouro: {
-                name: 'Padrão Ouro',
-                desc: 'Equilíbrio ideal e o mais comum entre profissionais. Liberta o polegar para saltar e usar boost simultaneamente.',
+                name: 'Meta Clássico (Padrão Ouro)',
+                desc: 'O layout mais popular. Boost no R1 permite pular e derrapar simultaneamente de forma fácil.',
                 bindings: { boost: 'R1/RB', powerslide: 'L1/LB', nar: 'L1/LB', arl: 'Quadrado/X', arr: 'Círculo/B' }
             },
             zen: {
-                name: 'Zen',
-                desc: 'Permite controlo analógico do Rolamento Aéreo Esquerdo (ARL) no gatilho, mas combina-o com a marcha-atrás.',
+                name: 'Configuração Zen',
+                desc: 'Coloca o Rolamento Aéreo Esquerdo (ARL) no L2, permitindo controle analógico da velocidade de giro no ar.',
                 bindings: { boost: 'Círculo/B', powerslide: 'Quadrado/X', nar: 'R1/RB', arl: 'L2/LT', }
             },
             apparentlyjack: {
-                name: 'ApparentlyJack',
-                desc: 'Otimizado para usar ARL e Boost com dedos diferentes, mas agrupa muitas funções no L1/LB.',
+                name: 'Estilo ApparentlyJack',
+                desc: 'Agrupa muitas funções no L1 para simplificar, exigindo excelente coordenação no dedo indicador esquerdo.',
                 bindings: { boost: 'R1/RB', powerslide: 'L1/LB', nar: 'L1/LB', arl: 'Quadrado/X', arr: 'Círculo/B' }
+            },
+            // NOVO: PERFIL CUSTOMIZADO AQUI
+            custom: {
+                name: 'Meu Setup Customizado',
+                desc: 'Escolha os botões abaixo para criar sua própria configuração híbrida. O diagrama e a exportação atualizarão em tempo real!',
+                bindings: { boost: 'Círculo/B', powerslide: 'Quadrado/X', nar: 'Quadrado/X', arl: 'L1/LB', arr: 'R1/RB' } // Padrão inicial
             }
         },
         trainingPacks: [
-            { name: 'Awkward Car Control', focus: 'Controle aéreo difícil', code: '454D-664E-AE27-55C3', category: 'Controle' },
-            { name: 'Intermediate Power Slides', focus: 'Controlo de derrapagens', code: '772F-E563-3F9F-0EC8', category: 'Controle' },
-            { name: 'First Touch Prac', focus: 'Controlo do primeiro toque', code: 'A49C-FECE-12C7-9271', category: 'Controle' },
-            { name: 'Kevpert | Aerial Car Control', focus: 'Controlo aéreo estacionário', code: 'A3E1-92C2-8757-4195', category: 'Aéreo' },
-            { name: 'Basic Aerials', focus: 'Introdução aos aéreos', code: 'F0BD-E416-D47D-AF28', category: 'Aéreo' },
-            { name: 'Air Dribbles', focus: 'Introdução ao air dribble', code: '1839-0F86-CE07-EE1F', category: 'Aéreo' },
-            { name: 'Double Tap Playground', focus: 'Prática de double taps', code: 'CAFC-FB3E-3C0F-B8F1', category: 'Aéreo' },
-            { name: 'Wall to Air Dribble', focus: 'Transição da parede para o ar', code: '9D87-258C-3C05-6FA9', category: 'Aéreo' },
-            { name: 'Shadow Defense', focus: 'Defesa em sombra', code: '5CCE-FB29-7B05-A0B1', category: 'Defesa' },
-            { name: 'Uncomfortable Saves', focus: 'Defesas difíceis', code: '2E23-ABD5-20C6-DBD4', category: 'Defesa' },
-            { name: 'Backboard Defense', focus: 'Defesas na parede de fundo', code: 'D7F8-FD53-98D1-DAFE', category: 'Defesa' },
-            { name: 'Ground Shots', focus: 'Chutes rasteiros', code: '6EB1-79B2-33B8-681C', category: 'Ataque' },
-            { name: 'Shooting Consistency', focus: 'Consistência nos chutes', code: '4912-A5C9-9A56-555D', category: 'Ataque' },
-            { name: 'Wall Shots', focus: 'Chutes a partir da parede', code: '9F6D-4387-4C57-2E4B', category: 'Ataque' },
+            // === OURO / PLATINA ===
+            { name: 'Basic Dribbling Skills', focus: 'Fundamentos de drible no chão', code: '0991-6C97-13DA-9592', category: 'Controle', rank: 'Ouro/Platina' },
+            { name: 'Novice Aerials', focus: 'Mecânica básica de voo', code: '0A40-E21D-61C1-49C6', category: 'Aéreo', rank: 'Ouro/Platina' },
+            { name: 'Novice Defender', focus: 'Defesas e posicionamento', code: '87E7-773A-CBE5-B2C3', category: 'Defesa', rank: 'Ouro/Platina' },
+            { name: 'Power Shot Basic', focus: 'Como gerar força no chute', code: '4D6A-C083-1FE7-08B7', category: 'Ataque', rank: 'Ouro/Platina' },
+            { name: 'Ground Shots', focus: 'Chutes fortes sem pular', code: '6EB1-79B2-33B8-681C', category: 'Ataque', rank: 'Ouro/Platina' },
+
+            // === DIAMANTE ===
+            { name: 'Bounce Dribble', focus: 'Dribles com o quique da bola', code: '9CB5-98D7-4B7A-BC1E', category: 'Controle', rank: 'Diamante' },
+            { name: 'Intermediate Aerials', focus: 'Voo rápido e precisão', code: '537C-F257-0F3A-4CB0', category: 'Aéreo', rank: 'Diamante' },
+            { name: 'Power Aerials', focus: 'Aéreos com força', code: '7753-F063-4B91-00C3', category: 'Aéreo', rank: 'Diamante' },
+            { name: 'Shadow Defense', focus: 'Defesa de costas pro gol (Sombra)', code: '5CCE-FB29-7B05-A0B1', category: 'Defesa', rank: 'Diamante' },
+            { name: 'Shooting Consistency', focus: 'Consistência de finalização', code: '4912-A5C9-9A56-555D', category: 'Ataque', rank: 'Diamante' },
+
+            // === CHAMPION ===
+            { name: 'Awkward Car Control', focus: 'Recuperação em posições difíceis', code: '454D-664E-AE27-55C3', category: 'Controle', rank: 'Champion' },
+            { name: 'Wall to Air Dribble', focus: 'Transição parede pro ar', code: '9D87-258C-3C05-6FA9', category: 'Aéreo', rank: 'Champion' },
+            { name: 'Double Tap Playground', focus: 'Leitura de tabela e double tap', code: 'CAFC-FB3E-3C0F-B8F1', category: 'Aéreo', rank: 'Champion' },
+            { name: 'Clearing for Beans', focus: 'Limpeza de bola sob pressão', code: '3B34-F63D-27BE-8404', category: 'Defesa', rank: 'Champion' },
+            { name: 'Backboard Shots', focus: 'Finalização da parede inimiga', code: 'AFFD-5023-BD4F-D320', category: 'Ataque', rank: 'Champion' },
+
+            // === GRAND CHAMPION ===
+            { name: 'Recreating RLCS7', focus: 'Mecânicas de Nível Pro (Mertzy)', code: 'D7B1-F15D-E870-0F8D', category: 'Controle', rank: 'Grand Champion' },
+            { name: 'GC Pack Nov 2022', focus: 'Controle Aéreo Extremo', code: '7DCC-9B6C-49A4-8EC4', category: 'Aéreo', rank: 'Grand Champion' },
+            { name: 'Backboard Reads', focus: 'Leituras de Tabela (CaioTG1)', code: '41E2-C45B-ACBC-174E', category: 'Defesa', rank: 'Grand Champion' },
+            { name: 'Goalie Clear Pack', focus: 'Defesas Rápidas GC', code: '53FB-4222-BD08-6E58', category: 'Defesa', rank: 'Grand Champion' },
+            { name: 'Redirects XXL Hard', focus: 'Desvios Impossíveis e Redirects', code: 'C272-B586-A45A-3675', category: 'Ataque', rank: 'Grand Champion' }
         ]
     };
-
-    let cameraChart;
-    let currentSettings = { ...data.camera.archetypes.hibrido };
 
     const tabs = document.querySelectorAll('.tab-button');
     const contents = document.querySelectorAll('.tab-content');
 
     const switchTab = (tabName) => {
-        contents.forEach(content => {
-            content.classList.add('hidden');
-        });
+        contents.forEach(content => content.classList.add('hidden'));
         tabs.forEach(tab => {
             tab.classList.remove('tab-active');
             tab.classList.add('tab-inactive');
@@ -323,32 +440,32 @@ document.addEventListener('DOMContentLoaded', () => {
         activeButton.classList.remove('tab-inactive');
     };
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            switchTab(tab.dataset.tab);
-        });
-    });
-    
+    tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
     switchTab('inicio');
 
     const initPerformance = () => {
         const checklist = document.getElementById('performance-checklist');
         checklist.innerHTML = data.performance.map(item => `
-            <div class="card p-4 flex items-start gap-4">
-                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">✓</div>
+            <div class="bg-slate-800/50 p-4 border border-slate-700 rounded-lg flex items-start gap-4 hover:border-cyan-500/50 transition-colors">
+                <div class="flex-shrink-0 mt-1 w-6 h-6 bg-cyan-900/50 text-cyan-400 rounded-full flex items-center justify-center font-bold text-sm shadow-[0_0_10px_rgba(0,242,254,0.3)]">✓</div>
                 <div>
-                    <h4 class="font-semibold text-lg">${item.setting} <span class="text-blue-600 font-bold ml-2">${item.value}</span></h4>
-                    <p class="text-gray-600 text-sm">${item.reason}</p>
+                    <h4 class="font-bold text-slate-200">${item.setting} <span class="text-cyan-400 font-black ml-1 text-sm uppercase tracking-wide bg-cyan-900/30 px-2 py-0.5 rounded">${item.value}</span></h4>
+                    <p class="text-slate-400 text-sm mt-1 leading-tight">${item.reason}</p>
                 </div>
             </div>
         `).join('');
     };
     
+    let cameraChart;
+    const archetypeButtonsList = [];
+
     const initCamera = () => {
         const archetypeSelector = document.getElementById('archetype-selector');
         archetypeSelector.innerHTML = Object.keys(data.camera.archetypes).map(key => `
-            <button data-archetype="${key}" class="archetype-button py-2 px-5 rounded-full font-semibold border-2 transition-all duration-300">${data.camera.archetypes[key].name}</button>
+            <button data-archetype="${key}" class="archetype-button py-2 px-5 rounded-full font-bold uppercase tracking-wider text-sm border border-slate-600 text-slate-300 transition-all hover:bg-slate-700">${data.camera.archetypes[key].name}</button>
         `).join('');
+        
+        document.querySelectorAll('.archetype-button').forEach(btn => archetypeButtonsList.push(btn));
 
         const slidersContainer = document.getElementById('camera-sliders');
         const sliders = [
@@ -357,17 +474,18 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 'angle', name: 'Ângulo', min: -6, max: 0, step: 1 },
             { id: 'stiffness', name: 'Rigidez', min: 0.3, max: 0.8, step: 0.05 },
         ];
+        
         slidersContainer.innerHTML = sliders.map(s => `
-            <div>
-                <label for="${s.id}" class="flex justify-between font-medium text-sm mb-1">
+            <div class="bg-slate-800/30 p-4 rounded-lg border border-slate-700/50">
+                <label for="${s.id}" class="flex justify-between font-bold text-slate-300 mb-3 uppercase text-sm tracking-wide">
                     <span>${s.name}</span>
-                    <span id="${s.id}-value">${currentSettings[s.id]}</span>
+                    <span id="${s.id}-value" class="text-cyan-400 text-lg font-black">${currentSettings[s.id]}</span>
                 </label>
-                <input type="range" id="${s.id}" min="${s.min}" max="${s.max}" step="${s.step}" value="${currentSettings[s.id]}" class="w-full">
+                <input type="range" id="${s.id}" min="${s.min}" max="${s.max}" step="${s.step}" value="${currentSettings[s.id]}">
             </div>
         `).join('');
 
-        document.querySelectorAll('.archetype-button').forEach(button => {
+        archetypeButtonsList.forEach(button => {
             button.addEventListener('click', (e) => {
                 const archetypeKey = e.target.dataset.archetype;
                 currentSettings = { ...data.camera.archetypes[archetypeKey] };
@@ -394,20 +512,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (valueLabel) valueLabel.textContent = currentSettings[key].toFixed(key === 'stiffness' ? 2 : 0);
         });
         
-        document.querySelectorAll('.archetype-button').forEach(btn => {
-            btn.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
-            btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+        archetypeButtonsList.forEach(btn => {
+            btn.className = "archetype-button py-2 px-5 rounded-full font-bold uppercase tracking-wider text-sm border border-slate-600 text-slate-300 transition-all hover:bg-slate-700";
         });
+        
         const currentArchetype = Object.keys(data.camera.archetypes).find(key => 
             data.camera.archetypes[key].distance === currentSettings.distance &&
             data.camera.archetypes[key].height === currentSettings.height &&
             data.camera.archetypes[key].angle === currentSettings.angle
         );
+        
         if(currentArchetype) {
             const activeBtn = document.querySelector(`[data-archetype="${currentArchetype}"]`);
             if(activeBtn) {
-                activeBtn.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
-                activeBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+                activeBtn.className = "archetype-button py-2 px-5 rounded-full font-bold uppercase tracking-wider text-sm border border-cyan-400 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(0,242,254,0.3)] transition-all";
             }
         }
 
@@ -417,34 +535,44 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const createCameraChart = () => {
         const ctx = document.getElementById('cameraChart').getContext('2d');
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Rajdhani', sans-serif";
+        Chart.defaults.font.size = 14;
+        Chart.defaults.font.weight = 'bold';
+        
         cameraChart = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: ['Visão de Campo', 'Controle Próximo', 'Estabilidade', 'Percepção de Velocidade'],
+                labels: ['VISÃO', 'CONTROLE', 'ESTABILIDADE', 'SPEED SENSE'],
                 datasets: [{
-                    label: 'Estilo de Jogo',
+                    label: 'Seu Setup',
                     data: [0, 0, 0, 0],
-                    backgroundColor: 'rgba(0, 123, 255, 0.2)',
-                    borderColor: 'rgba(0, 123, 255, 1)',
+                    backgroundColor: 'rgba(0, 242, 254, 0.2)',
+                    borderColor: '#00f2fe',
                     borderWidth: 2,
-                    pointBackgroundColor: 'rgba(0, 123, 255, 1)'
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#00f2fe',
+                    pointHoverBackgroundColor: '#00f2fe',
+                    pointHoverBorderColor: '#fff',
+                    pointRadius: 4
                 }]
             },
             options: {
                 maintainAspectRatio: false,
                 scales: {
                     r: {
-                        angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
-                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
-                        pointLabels: { font: { size: 12 } },
+                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        pointLabels: { 
+                            font: { size: 12, weight: 'bold' },
+                            color: '#e2e8f0'
+                        },
                         suggestedMin: 0,
                         suggestedMax: 100,
                         ticks: { display: false }
                     }
                 },
-                plugins: {
-                    legend: { display: false }
-                }
+                plugins: { legend: { display: false } }
             }
         });
     };
@@ -462,44 +590,67 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateProPlayerTable = () => {
         const tableBody = document.getElementById('pro-player-table');
         const { distance, height, angle } = currentSettings;
-        const similarPros = data.camera.pros.filter(pro => 
-            Math.abs(pro.distance - distance) <= 10 &&
-            Math.abs(pro.height - height) <= 10 &&
-            Math.abs(pro.angle - angle) <= 1
+        
+        const similarPros = data.camera.pros.filter(({distance: pD, height: pH, angle: pA}) => 
+            Math.abs(pD - distance) <= 10 &&
+            Math.abs(pH - height) <= 10 &&
+            Math.abs(pA - angle) <= 1
         ).slice(0, 5);
 
         if (similarPros.length > 0) {
             tableBody.innerHTML = similarPros.map(pro => `
-                <tr class="hover:bg-gray-50">
-                    <td class="py-2 px-3">${pro.name}</td>
-                    <td class="py-2 px-3 text-center">${pro.distance}</td>
-                    <td class="py-2 px-3 text-center">${pro.height}</td>
-                    <td class="py-2 px-3 text-center">${pro.angle}</td>
+                <tr class="hover:bg-slate-800/50 transition-colors">
+                    <td class="py-3 px-4 font-bold text-cyan-50">${pro.name}</td>
+                    <td class="py-3 px-4 text-center font-mono">${pro.distance}</td>
+                    <td class="py-3 px-4 text-center font-mono">${pro.height}</td>
+                    <td class="py-3 px-4 text-center font-mono">${pro.angle}</td>
                 </tr>
             `).join('');
         } else {
-            tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Nenhum profissional com configurações exatamente iguais.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">Configure para encontrar seu pro player semelhante.</td></tr>`;
         }
     };
 
     const initControls = () => {
         const selector = document.getElementById('layout-selector');
         selector.innerHTML = Object.keys(data.controls).map(key => `
-            <button data-layout="${key}" class="control-layout-button py-3 px-4 rounded-lg font-semibold border-2 transition-all duration-300 text-left">${data.controls[key].name}</button>
+            <button data-layout="${key}" class="control-layout-button py-3 px-4 rounded-lg font-bold uppercase tracking-wide border border-slate-600 text-slate-300 transition-all text-left hover:bg-slate-700">${data.controls[key].name}</button>
         `).join('');
 
-        const diagram = document.getElementById('controller-diagram');
-        diagram.innerHTML = `
-            <div id="btn-l1" class="absolute top-[12%] left-[10%] w-[25%] h-[10%] bg-gray-300 rounded-t-lg flex items-center justify-center text-xs font-bold transition-all">L1/LB</div>
-            <div id="btn-r1" class="absolute top-[12%] right-[10%] w-[25%] h-[10%] bg-gray-300 rounded-t-lg flex items-center justify-center text-xs font-bold transition-all">R1/RB</div>
-            <div id="btn-l2" class="absolute top-0 left-[10%] w-[25%] h-[12%] bg-gray-400 rounded-t-lg flex items-center justify-center text-xs font-bold transition-all">L2/LT</div>
-            <div id="btn-r2" class="absolute top-0 right-[10%] w-[25%] h-[12%] bg-gray-400 rounded-t-lg flex items-center justify-center text-xs font-bold transition-all">R2/RT</div>
-            <div class="absolute top-[20%] left-0 w-full h-[80%] bg-gray-200 rounded-3xl"></div>
-            <div id="btn-quadrado" class="absolute top-1/2 left-[20%] -translate-y-1/2 w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center font-bold transition-all">□/X</div>
-            <div id="btn-circulo" class="absolute top-1/2 right-[20%] -translate-y-1/2 w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center font-bold transition-all">○/B</div>
-            <div id="btn-x" class="absolute top-[65%] left-[28%] w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center font-bold transition-all">X/A</div>
-            <div id="btn-triangulo" class="absolute top-[35%] left-[28%] w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center font-bold transition-all">△/Y</div>
-        `;
+        // Monta os Dropdowns (Caixas de Seleção) para o modo Customizado
+        const customPanel = document.getElementById('custom-controls-panel');
+        const actionsList = [
+            { id: 'boost', label: 'Boost' },
+            { id: 'powerslide', label: 'Derrapar (Slide)' },
+            { id: 'nar', label: 'Rolamento (NAR)' },
+            { id: 'arl', label: 'Rolamento Esq. (ARL)' },
+            { id: 'arr', label: 'Rolamento Dir. (ARR)' }
+        ];
+        const availableButtons = ['R1/RB', 'L1/LB', 'R2/RT', 'L2/LT', 'Quadrado/X', 'Círculo/B', 'Triângulo/Y', 'X/A', 'Nenhum'];
+
+        customPanel.innerHTML = actionsList.map(action => `
+            <div class="flex justify-between items-center bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                <label class="text-xs font-bold text-slate-300 uppercase w-1/2">${action.label}</label>
+                <select data-action="${action.id}" class="custom-binding-select w-1/2 bg-slate-900 text-cyan-400 text-xs font-bold p-2 rounded border border-slate-600 focus:border-cyan-500 outline-none cursor-pointer">
+                    ${availableButtons.map(btn => `<option value="${btn}">${btn}</option>`).join('')}
+                </select>
+            </div>
+        `).join('');
+
+        // Listener: Quando o usuário trocar um botão no dropdown, atualiza o desenho do controle
+        document.querySelectorAll('.custom-binding-select').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const action = e.target.dataset.action;
+                const newValue = e.target.value;
+                
+                if (newValue === 'Nenhum') {
+                    delete data.controls.custom.bindings[action];
+                } else {
+                    data.controls.custom.bindings[action] = newValue;
+                }
+                updateControlsView('custom'); // Atualiza a tela imediatamente
+            });
+        });
 
         document.querySelectorAll('.control-layout-button').forEach(button => {
             button.addEventListener('click', (e) => {
@@ -507,102 +658,351 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        updateControlsView('padrao_ouro');
+        updateControlsView('padrao_ouro'); // Começa com o padrão
     };
 
     const updateControlsView = (layoutKey) => {
+        currentControlLayout = layoutKey;
+
+        // Limpa os botões
         document.querySelectorAll('.control-layout-button').forEach(btn => {
-            btn.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
-            btn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+            btn.className = "control-layout-button py-3 px-4 rounded-lg font-bold uppercase tracking-wide border border-slate-600 text-slate-300 transition-all text-left hover:bg-slate-700";
         });
+        
+        // Acende o botão selecionado
         const activeBtn = document.querySelector(`[data-layout="${layoutKey}"]`);
-        activeBtn.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
-        activeBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+        activeBtn.className = "control-layout-button py-3 px-4 rounded-lg font-bold uppercase tracking-wide border border-pink-500 bg-pink-500/10 text-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.3)] transition-all text-left";
 
         const layout = data.controls[layoutKey];
         document.getElementById('layout-title').textContent = layout.name;
         document.getElementById('layout-desc').textContent = layout.desc;
 
+        // Mostra ou Esconde o painel customizado se ele clicou em "Custom"
+        const customPanel = document.getElementById('custom-controls-panel');
+        if (layoutKey === 'custom') {
+            customPanel.style.display = 'flex';
+            // Sincroniza os dropdowns com os valores atuais do objeto JS
+            document.querySelectorAll('.custom-binding-select').forEach(select => {
+                const action = select.dataset.action;
+                select.value = data.controls.custom.bindings[action] || 'Nenhum';
+            });
+        } else {
+            customPanel.style.display = 'none';
+        }
+
         const allButtons = {
             'R1/RB': 'btn-r1', 'L1/LB': 'btn-l1',
             'Quadrado/X': 'btn-quadrado', 'Círculo/B': 'btn-circulo',
-            'L2/LT': 'btn-l2'
+            'L2/LT': 'btn-l2', 'X/A': 'btn-x', 'Triângulo/Y': 'btn-triangulo'
         };
 
-        Object.values(allButtons).forEach(id => {
+        const baseClasses = {
+            'btn-r1': 'absolute top-[18%] right-[15%] w-[20%] h-[10%] bg-slate-600 rounded-b-lg flex flex-col items-center justify-center text-xs font-bold text-slate-200 transition-colors shadow-lg z-10',
+            'btn-l1': 'absolute top-[18%] left-[15%] w-[20%] h-[10%] bg-slate-600 rounded-b-lg flex flex-col items-center justify-center text-xs font-bold text-slate-200 transition-colors shadow-lg z-10',
+            'btn-l2': 'absolute top-4 left-[15%] w-[20%] h-[12%] bg-slate-700 rounded-t-xl flex flex-col items-center justify-center text-xs font-bold text-slate-300 transition-colors border-t border-slate-500',
+            'btn-r2': 'absolute top-4 right-[15%] w-[20%] h-[12%] bg-slate-700 rounded-t-xl flex flex-col items-center justify-center text-xs font-bold text-slate-300 transition-colors border-t border-slate-500',
+            'btn-quadrado': 'absolute left-0 w-9 h-9 bg-slate-600 rounded-full flex flex-col items-center justify-center font-bold text-slate-300 transition-colors shadow-md text-[10px]',
+            'btn-circulo': 'absolute right-0 w-9 h-9 bg-slate-600 rounded-full flex flex-col items-center justify-center font-bold text-slate-300 transition-colors shadow-md text-[10px]',
+            'btn-triangulo': 'absolute top-0 w-9 h-9 bg-slate-600 rounded-full flex flex-col items-center justify-center font-bold text-slate-300 transition-colors shadow-md text-[10px]',
+            'btn-x': 'absolute bottom-0 w-9 h-9 bg-slate-600 rounded-full flex flex-col items-center justify-center font-bold text-slate-300 transition-colors shadow-md text-[10px]'
+        };
+        
+        const labelsMap = {
+            'btn-r1': 'R1', 'btn-l1': 'L1', 'btn-l2': 'L2', 'btn-r2': 'R2',
+            'btn-quadrado': '□', 'btn-circulo': '○', 'btn-triangulo': '△', 'btn-x': 'X'
+        };
+
+        Object.entries(allButtons).forEach(([key, id]) => {
             const el = document.getElementById(id);
             if (el) {
-                el.innerHTML = el.innerHTML.split('<br>')[0];
-                el.classList.remove('bg-yellow-400', 'bg-green-400', 'bg-red-400', 'bg-purple-400');
-                el.classList.add('bg-gray-300');
+                el.className = baseClasses[id];
+                el.innerHTML = `<span>${labelsMap[id]}</span>`; 
             }
         });
 
-        const colorMap = { boost: 'bg-green-400', powerslide: 'bg-yellow-400', nar: 'bg-yellow-400', arl: 'bg-red-400', arr: 'bg-purple-400' };
+        const colorMap = { 
+            boost: 'bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.6)] border border-green-400', 
+            powerslide: 'bg-yellow-500 text-slate-900 shadow-[0_0_15px_rgba(234,179,8,0.6)] border border-yellow-400', 
+            nar: 'bg-yellow-500 text-slate-900 shadow-[0_0_15px_rgba(234,179,8,0.6)] border border-yellow-400', 
+            arl: 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.6)] border border-pink-400', 
+            arr: 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)] border border-purple-400' 
+        };
 
+        const actionsPerButton = {};
         for (const [action, binding] of Object.entries(layout.bindings)) {
             if (allButtons[binding]) {
                 const btnId = allButtons[binding];
-                const btnEl = document.getElementById(btnId);
-                if (btnEl) {
-                    btnEl.classList.remove('bg-gray-300');
-                    btnEl.classList.add(colorMap[action]);
-                    const actionText = action.replace('powerslide', 'slide').replace('nar', 'NAR').replace('arl', 'ARL').replace('arr', 'ARR');
-                    if (!btnEl.innerHTML.includes(actionText)) {
-                        btnEl.innerHTML += `<br><span class="text-xs opacity-80">${actionText}</span>`;
-                    }
-                }
+                if (!actionsPerButton[btnId]) actionsPerButton[btnId] = [];
+                actionsPerButton[btnId].push(action);
+            }
+        }
+
+        for (const [btnId, actions] of Object.entries(actionsPerButton)) {
+            const btnEl = document.getElementById(btnId);
+            
+            if (btnEl) {
+                btnEl.className = btnEl.className.replace(/bg-slate-\d+/g, '').replace(/text-slate-\d+/g, '');
+                btnEl.className += ` ${colorMap[actions[0]]}`;
+                
+                const actionsHtml = actions.map(action => {
+                    const actionText = action.replace('powerslide', 'Slide').replace('nar', 'NAR').replace('arl', 'ARL').replace('arr', 'ARR').toUpperCase();
+                    return `<span class="text-[8px] font-black opacity-90 leading-none mt-[2px]">${actionText}</span>`;
+                }).join('');
+
+                btnEl.innerHTML = `<span>${labelsMap[btnId]}</span><div class="flex flex-col items-center">${actionsHtml}</div>`;
             }
         }
     };
 
     const initTraining = () => {
         const grid = document.getElementById('training-packs-grid');
-        const filterButtons = document.querySelectorAll('.filter-button');
+        const filterButtonsCategory = document.querySelectorAll('.filter-button');
+        const filterButtonsRank = document.querySelectorAll('.filter-button-rank');
 
-        const renderPacks = (filter) => {
-            const filteredPacks = (filter === 'all') ? data.trainingPacks : data.trainingPacks.filter(p => p.category === filter);
+        // Estado dos filtros
+        let currentCategory = 'all';
+        let currentRank = 'all';
+
+        // Cores dos Ranks para os selos (badges)
+        const rankColors = {
+            'Ouro/Platina': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+            'Platina': 'bg-teal-500/20 text-teal-400 border-teal-500/30',
+            'Diamante': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+            'Champion': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+            'Grand Champion': 'bg-red-500/20 text-red-400 border-red-500/30'
+        };
+
+        const renderPacks = () => {
+            // Filtra primeiro pela Categoria, depois pelo Rank
+            const filteredPacks = data.trainingPacks.filter(p => {
+                const matchCategory = currentCategory === 'all' || p.category === currentCategory;
+                
+                // CORREÇÃO AQUI: Agora usa === (exatamente igual) em vez de .includes()
+                const matchRank = currentRank === 'all' || p.rank === currentRank;
+                
+                return matchCategory && matchRank;
+            });
+
+            if (filteredPacks.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center p-8 text-slate-500 italic border border-slate-700/50 rounded-xl bg-slate-800/30">Nenhum pacote encontrado para esta combinação de filtros. Tente outra.</div>`;
+                return;
+            }
+
             grid.innerHTML = filteredPacks.map(pack => `
-                <div class="card p-4 flex flex-col justify-between">
-                    <div>
-                        <h4 class="font-bold">${pack.name}</h4>
-                        <p class="text-sm text-gray-600 mb-2">${pack.focus}</p>
-                        <p class="text-xs bg-gray-100 text-gray-800 font-mono p-2 rounded">${pack.code}</p>
+                <div class="card p-5 flex flex-col justify-between border-t-2 border-t-cyan-500/50 relative overflow-hidden">
+                    <div class="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border ${rankColors[pack.rank] || 'bg-slate-700 text-slate-300 border-slate-600'}">
+                        ${pack.rank}
                     </div>
-                    <button class="copy-code-button mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors" data-code="${pack.code}">Copiar Código</button>
+
+                    <div>
+                        <div class="flex justify-between items-start mb-2 pr-20">
+                            <h4 class="font-bold text-slate-200 uppercase tracking-wide leading-tight">${pack.name}</h4>
+                        </div>
+                        <p class="text-xs text-cyan-200 mb-4 font-medium uppercase tracking-wider opacity-80">${pack.category} • ${pack.focus}</p>
+                        
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 flex justify-center mt-2">
+                            <p class="text-sm text-pink-400 font-mono font-bold tracking-widest">${pack.code}</p>
+                        </div>
+                    </div>
+                    <button class="copy-code-button mt-5 w-full bg-slate-800 text-cyan-400 border border-cyan-500/30 py-2.5 px-4 rounded-lg font-bold uppercase tracking-wide hover:bg-cyan-500 hover:text-slate-900 transition-all shadow-[0_0_10px_rgba(0,242,254,0.1)]" data-code="${pack.code}">
+                        Copiar Code
+                    </button>
                 </div>
             `).join('');
             
+            // Re-anexar os listeners do botão de copiar
             document.querySelectorAll('.copy-code-button').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const code = e.target.dataset.code;
                     navigator.clipboard.writeText(code).then(() => {
-                        e.target.textContent = 'Copiado!';
-                        setTimeout(() => { e.target.textContent = 'Copiar Código'; }, 2000);
+                        const originalText = e.target.textContent;
+                        e.target.textContent = 'COPIADO!';
+                        e.target.className = "copy-code-button mt-5 w-full bg-green-500 text-white py-2.5 px-4 rounded-lg font-bold uppercase tracking-wide transition-all";
+                        setTimeout(() => { 
+                            e.target.textContent = originalText; 
+                            e.target.className = "copy-code-button mt-5 w-full bg-slate-800 text-cyan-400 border border-cyan-500/30 py-2.5 px-4 rounded-lg font-bold uppercase tracking-wide hover:bg-cyan-500 hover:text-slate-900 transition-all shadow-[0_0_10px_rgba(0,242,254,0.1)]";
+                        }, 2000);
                     });
                 });
             });
         };
 
-        filterButtons.forEach(button => {
+        // Lógica de clique para os filtros de Categoria
+        filterButtonsCategory.forEach(button => {
             button.addEventListener('click', (e) => {
-                filterButtons.forEach(btn => {
-                    btn.classList.remove('bg-blue-500', 'text-white');
-                    btn.classList.add('bg-white', 'text-gray-700');
+                filterButtonsCategory.forEach(btn => {
+                    btn.className = "filter-button bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700";
                 });
-                e.target.classList.add('bg-blue-500', 'text-white');
-                e.target.classList.remove('bg-white', 'text-gray-700');
-                renderPacks(e.target.dataset.filter);
+                e.target.className = "filter-button active bg-cyan-500 text-slate-900 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all shadow-[0_0_15px_rgba(0,242,254,0.4)]";
+                currentCategory = e.target.dataset.filter;
+                renderPacks();
             });
         });
 
-        renderPacks('all');
+        // Lógica de clique para os filtros de Rank
+        filterButtonsRank.forEach(button => {
+            button.addEventListener('click', (e) => {
+                filterButtonsRank.forEach(btn => {
+                    btn.className = "filter-button-rank bg-slate-800 text-slate-300 border border-slate-600 py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all hover:bg-slate-700";
+                });
+                e.target.className = "filter-button-rank active bg-pink-500 text-white py-1.5 px-4 rounded-full font-bold uppercase tracking-wider text-xs transition-all shadow-[0_0_15px_rgba(236,72,153,0.4)]";
+                currentRank = e.target.dataset.filter;
+                renderPacks();
+            });
+        });
+
+        // Inicia desenhando todos os cards
+        renderPacks();
     };
 
+    const initDeadzoneLab = () => {
+        const canvas = document.getElementById('deadzoneCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 100;
+
+        let currentShape = 'cross';
+        let angle = 0;
+
+        const btnCross = document.getElementById('btn-shape-cross');
+        const btnSquare = document.getElementById('btn-shape-square');
+
+        const updateShapeButtons = (shape) => {
+            currentShape = shape;
+            const activeClass = "shape-btn flex-1 py-2 px-4 rounded-lg font-bold text-sm border-2 border-cyan-500 bg-cyan-500/10 text-cyan-400 shadow-[0_0_10px_rgba(0,242,254,0.3)] transition-all";
+            const inactiveClass = "shape-btn flex-1 py-2 px-4 rounded-lg font-bold text-sm border border-slate-600 text-slate-400 hover:bg-slate-700 transition-all";
+            
+            btnCross.className = shape === 'cross' ? activeClass : inactiveClass;
+            btnSquare.className = shape === 'square' ? activeClass : inactiveClass;
+        };
+
+        btnCross.addEventListener('click', () => updateShapeButtons('cross'));
+        btnSquare.addEventListener('click', () => updateShapeButtons('square'));
+
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.15, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(236, 72, 153, 0.2)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(236, 72, 153, 0.5)';
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#475569';
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.beginPath();
+            if (currentShape === 'cross') {
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = '#00f2fe';
+                ctx.fillStyle = 'rgba(0, 242, 254, 0.05)';
+            } else {
+                ctx.rect(centerX - radius, centerY - radius, radius * 2, radius * 2);
+                ctx.strokeStyle = '#a855f7';
+                ctx.fillStyle = 'rgba(168, 85, 247, 0.05)';
+            }
+            ctx.lineWidth = 2;
+            ctx.fill();
+            ctx.stroke();
+
+            let inputX = Math.cos(angle);
+            let inputY = Math.sin(angle);
+            let drawX = centerX;
+            let drawY = centerY;
+
+            if (currentShape === 'cross') {
+                drawX += inputX * radius;
+                drawY += inputY * radius;
+            } else {
+                const maxVal = Math.max(Math.abs(inputX), Math.abs(inputY));
+                drawX += (inputX / maxVal) * radius;
+                drawY += (inputY / maxVal) * radius;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(drawX, drawY);
+            ctx.strokeStyle = currentShape === 'cross' ? '#00f2fe' : '#a855f7';
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.5;
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = currentShape === 'cross' ? '#00f2fe' : '#a855f7';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            angle += 0.03;
+            requestAnimationFrame(draw);
+        };
+
+        draw();
+    };
+
+    // NOVO: FUNÇÃO PARA GERAR O CARD DE EXPORTAÇÃO
+    // NOVO: FUNÇÃO PARA GERAR O CARD DE EXPORTAÇÃO (COM BOTÕES DETALHADOS)
+    const initExportFeature = () => {
+        const btnExport = document.getElementById('btn-export-setup');
+        const textArea = document.getElementById('export-textarea');
+        
+        btnExport.addEventListener('click', () => {
+            const layout = data.controls[currentControlLayout];
+            const layoutName = layout.name;
+            const bindings = layout.bindings;
+            const { distance, height, angle, stiffness } = currentSettings;
+            
+            // Dicionário para traduzir as chaves do código para um texto amigável
+            const actionNames = {
+                boost: 'Boost',
+                powerslide: 'Derrapar (PowerSlide)',
+                nar: 'Rolamento Aéreo (NAR)',
+                arl: 'Rolamento Esquerdo (ARL)',
+                arr: 'Rolamento Direito (ARR)'
+            };
+
+            // Monta a lista detalhada de botões com um visual de sub-item
+            let bindingsText = '';
+            for (const [action, button] of Object.entries(bindings)) {
+                bindingsText += `  └ ${actionNames[action] || action}: ${button}\n`;
+            }
+            
+            // Texto final do card com a Câmera e os Controles destrinchados
+            const cardText = `🚀 SETUP ROCKET LEAGUE - miranha_mec 🚗💨\n\n🎥 CÂMERA:\n• Distância: ${distance}\n• Altura: ${height}\n• Ângulo: ${angle}\n• Rigidez: ${stiffness.toFixed(2)}\n\n🎮 CONTROLE:\n• Layout: ${layoutName}\n${bindingsText}\n📊 Criado no Rocket Config Lab`;
+            
+            textArea.value = cardText;
+            
+            navigator.clipboard.writeText(cardText).then(() => {
+                const originalText = btnExport.textContent;
+                btnExport.textContent = 'COPIADO COM SUCESSO!';
+                btnExport.className = "bg-green-500 text-white py-3 px-8 rounded-full font-bold uppercase tracking-wide transition-all shadow-[0_0_15px_rgba(34,197,94,0.4)]";
+                
+                setTimeout(() => {
+                    btnExport.textContent = originalText;
+                    btnExport.className = "bg-pink-500 text-white py-3 px-8 rounded-full font-bold uppercase tracking-wide transition-all shadow-[0_0_15px_rgba(236,72,153,0.4)] hover:bg-pink-400 hover:shadow-[0_0_25px_rgba(236,72,153,0.6)]";
+                }, 2500);
+            });
+        });
+    };
+
+    // INICIALIZAÇÃO GERAL
     initPerformance();
     initCamera();
     initControls();
     initTraining();
+    initDeadzoneLab();
+    initExportFeature(); // Chama a nova função do Card
 });
 </script>
 </body>
