@@ -31,9 +31,8 @@ Este site foi construído inteiramente com tecnologias web clássicas (HTML, CSS
 Como é um projeto puramente Front-end estático, rodar é muito simples:
 
 1. Clone este repositório na sua máquina:
-   ```bash
    git clone [https://github.com/Luiprogramador/surpresa-dia-mulheres.git](https://github.com/Luiprogramador/surpresa-dia-mulheres.git)
-   ```
+   
 2. Navegue até a pasta do projeto.
 
 3. Dê um duplo clique no arquivo index.html para abri-lo diretamente no seu navegador de preferência.
